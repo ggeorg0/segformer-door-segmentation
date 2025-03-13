@@ -1,0 +1,7 @@
+torch
+torchvision
+torchaudio
+numpy
+pandas
+datasets[vision]
+python-dotenv
