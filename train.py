@@ -18,22 +18,19 @@ from data_utils import DoorsDataset
 
 # defining constants
 DATASET_PATH = Path("/home/ggeorge/datasets/DeepDoors_2/Detection_Segmentation")
-
 IMGS_DIR = "Images"
 SEG_MAPS_DIR = "Annotations"
-
 N_EPOCHS = 50
 LR = 0.00006
 BATCH_SIZE = 8
+MLFLOW_EXP_ID = "639229507917248954"
 
 mlflow.set_tracking_uri("http://localhost:17888")
-MLFLOW_EXP_ID = "639229507917248954"
 
 torch.manual_seed(127)
 
 # segformer image preprocessor: set right resolution, normalize values and so on.
 img_processor = SegformerImageProcessor()
-
 color_jitter = v2.ColorJitter(brightness=0.25, contrast=0.25, saturation=0.25, hue=0.1)
 scale_jitter = v2.ScaleJitter(target_size=(512, 512), scale_range=(0.1, 2))
 transforms = v2.Compose([
@@ -42,7 +39,6 @@ transforms = v2.Compose([
     v2.RandomHorizontalFlip(p=0.5)
 ])
 
-
 dataset = DoorsDataset(
     images_dir=DATASET_PATH / IMGS_DIR,
     seg_masks_dir=DATASET_PATH / SEG_MAPS_DIR,
@@ -50,8 +46,13 @@ dataset = DoorsDataset(
     transforms=transforms
 )
 
+train_dataset, val_dataset, test_dataset = random_split(
+    dataset, [0.80, 0.10, 0.10], generator=Generator().manual_seed(127)
+)
+
 id2label = {0: "background", 1: "door"}
 label2id = {v: k for k, v in id2label.items()}
+
 
 # define model
 model = SegformerForSemanticSegmentation.from_pretrained(
@@ -63,9 +64,6 @@ model = SegformerForSemanticSegmentation.from_pretrained(
 device = torch.device("cuda")
 model.to(device)
 
-train_dataset, val_dataset, test_dataset = random_split(
-    dataset, [0.80, 0.10, 0.10], generator=Generator().manual_seed(127)
-)
 
 train_dataloader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True, num_workers=4)
 val_dataloader = DataLoader(val_dataset, batch_size=4, num_workers=4)
@@ -106,9 +104,6 @@ def train_model(
     mean_loss = train_loss / len(train_dataloader)
     return mean_loss
 
-
-# define loss and metrics evaluation function on given data (DataLoder)
-# to evaluate validation and test set (so we need to use this code twice)
 def eval_loss_n_metrics(
     model: SegformerForSemanticSegmentation,
     device: torch.device,
