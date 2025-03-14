@@ -2,3 +2,5 @@
 .venv
 __pycache__
 .env
+mlruns
+mlartifacts/639229507917248954/b7ea16f36d65419aa0a5b63d0989183b/artifacts/model_checkpoints
